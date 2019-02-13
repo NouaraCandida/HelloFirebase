@@ -1,0 +1,36 @@
+public override bool FinishedLaunching(UIApplication application, NSDictionary launchOptions)
+        {
+            if (UIDevice.CurrentDevice.CheckSystemVersion(10, 0))
+            {
+                // iOS 10 or later
+                var authOptions = UNAuthorizationOptions.Alert | UNAuthorizationOptions.Badge | UNAuthorizationOptions.Sound;
+                UNUserNotificationCenter.Current.RequestAuthorization(authOptions, (granted, error) => {
+                    Console.WriteLine(granted);
+                });
+
+                UNUserNotificationCenter.Current.Delegate = this;
+
+                //Messaging.SharedInstance.RemoteMessageDelegate = this;
+            }
+            else
+            {
+                // iOS 9 or before
+                var allNotificationTypes = UIUserNotificationType.Alert | UIUserNotificationType.Badge | UIUserNotificationType.Sound;
+                var settings = UIUserNotificationSettings.GetSettingsForTypes(allNotificationTypes, null);
+                UIApplication.SharedApplication.RegisterUserNotificationSettings(settings);
+            }
+            Firebase.Core.App.Configure();
+
+            UIApplication.SharedApplication.RegisterForRemoteNotifications();
+
+            Firebase.InstanceID.InstanceId.Notifications.ObserveTokenRefresh((sender, e) =>
+            {
+                var newToken = Firebase.InstanceID.InstanceId.SharedInstance.Token;
+                // if you want to send notification per user, use this token
+                System.Diagnostics.Debug.WriteLine(newToken);
+                Messaging.SharedInstance.ShouldEstablishDirectChannel = true;
+            });
+            Messaging.SharedInstance.ShouldEstablishDirectChannel = true;
+
+            return true;
+        }
